@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	android:background="@drawable/bonuspack_bubble" >
+	<ImageView android:id="@+id/bubble_image"
+		android:layout_width="65dp"
+		android:layout_height="65dp"
+		android:visibility="gone" />
+
+	<RelativeLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingLeft="5dp"
+	android:paddingRight="5dp"
+	android:gravity="right"
+   >
+
+		<EditText
+		    android:id="@+id/title_textedit"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:hint="POI Title"
+		    android:ems="10"
+		    >
+		    <requestFocus />
+		</EditText>
+
+
+
+		<EditText
+		    android:id="@+id/desc_textedit"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:inputType="textMultiLine"
+    		android:lines="4"
+    		android:minLines="3"
+    		android:maxLines="5"
+    		android:scrollbars="vertical"
+    		android:gravity="top|right"
+		    android:hint="Description"
+		    android:ems="10"
+			android:layout_below="@+id/title_textedit"
+		   />
+
+		<Spinner
+		    android:id="@+id/category_spinner"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:ems="10"
+		    android:layout_below="@+id/desc_textedit"
+	        android:layout_centerInParent="true"
+			 />
+
+		 <Button
+	        android:id="@+id/save_poi_btn"
+	        android:layout_width="wrap_content"
+	        android:layout_height="35dp"
+	        android:layout_marginTop="3dip"
+	        android:layout_below="@+id/category_spinner"
+	        android:text="Save"
+	        android:background="@drawable/typical_button"
+	        android:layout_centerInParent="true"
+	        android:textSize="11dp"
+		/>
+	</RelativeLayout>
+</LinearLayout>
