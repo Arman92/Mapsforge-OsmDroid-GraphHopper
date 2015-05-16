@@ -23,5 +23,5 @@ Rendertheme are used to style your rendered maps, you can edit it as you want.
 The render theme "Detailed.xml" is available in "Data" folder of this repository. (You may want to try [diffrent render themes](https://github.com/mapsforge/mapsforge/tree/master/Applications/Android/Samples/assets/renderthemes))
 
 
-** GraphHopper routing is not available at the moment, I will update the repository soon.
+**GraphHopper routing is not available at the moment, I will update the repository soon.**
 
