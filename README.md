@@ -3,7 +3,7 @@
 
 This project shows how to easily combine three great libraris to build up a handy offline map application in android.
 
-It uses [OsmDroid](https://github.com/osmdroid/osmdroid) as map viewer, [OsmBonusPack](https://code.google.com/p/osmbonuspack/), [Mapsforge](http://mapsforge.com) as offline OSM map renderer and [Graphhopper](https://graphhopper.com) as OSM-based routing provider.
+It uses [OsmDroid 4.3](https://github.com/osmdroid/osmdroid) as map viewer, [OsmBonusPack 5.1](https://code.google.com/p/osmbonuspack/), [Mapsforge 0.5.1](http://mapsforge.com) as offline OSM map renderer and [Graphhopper 0.4](https://graphhopper.com) as OSM-based routing provider.
 
 Please note that you need to specify your own mapsforge .map file and rendertheme:
 
