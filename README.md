@@ -9,15 +9,16 @@ Please note that you need to specify your own mapsforge .map file and renderthem
 
 **MainActivity.java**
 
-  final ITileSource tileSource = new MFTileSource(5,20, 256,
-          Environment.getExternalStorageDirectory() + "/Mapsforge/map/iran.map",
-          Environment.getExternalStorageDirectory() + "/Mapsforge/renderthemes/detailed.xml"
-          , this);
+    final ITileSource tileSource = new MFTileSource(5,20, 256,
+            Environment.getExternalStorageDirectory() + "/Mapsforge/map/iran.map",
+            Environment.getExternalStorageDirectory() + "/Mapsforge/renderthemes/detailed.xml"
+            , this);
 
 
 The map center is focused at (32.653906, 51.659088), pointing on Isfahan, Iran. change it as you want.
 
-You can find pre-built .map file in [mapsforge download center](http://download.mapsforge.org/maps/)
+You can find pre-built .map file in [mapsforge download center](http://download.mapsforge.org/maps/).
+
 Rendertheme are used to style your rendered maps, you can edit it as you want.
 The render theme "Detailed.xml" is available in "Data" folder of this repository. (You may want to try [diffrent render themes](https://github.com/mapsforge/mapsforge/tree/master/Applications/Android/Samples/assets/renderthemes))
 
