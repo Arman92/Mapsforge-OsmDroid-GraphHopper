@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/OsmdroidMapsforge.iml" filepath="$PROJECT_DIR$/OsmdroidMapsforge.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Mapsforge-OsmDroid-GraphHopper.iml" filepath="$PROJECT_DIR$/Mapsforge-OsmDroid-GraphHopper.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
