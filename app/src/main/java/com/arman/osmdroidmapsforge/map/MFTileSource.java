@@ -9,12 +9,12 @@ import org.mapsforge.core.model.Tile;
 import org.mapsforge.map.android.graphics.AndroidBitmap;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.mapsforge.map.android.util.AndroidUtil;
+import org.mapsforge.map.datastore.MapDataStore;
 import org.mapsforge.map.layer.cache.TileCache;
 import org.mapsforge.map.layer.renderer.DatabaseRenderer;
 import org.mapsforge.map.layer.renderer.RendererJob;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.model.MapViewPosition;
-import org.mapsforge.map.reader.MapDataStore;
 import org.mapsforge.map.reader.MapFile;
 import org.mapsforge.map.rendertheme.ExternalRenderTheme;
 import org.mapsforge.map.rendertheme.XmlRenderTheme;
@@ -81,8 +81,9 @@ public class MFTileSource implements ITileSource{
 
 		displayModel.setFixedTileSize(256);
 		
-		TileCache tileCache = AndroidUtil.createTileCache(context, "111", 256, 1.0f, 1.2, false, 0);
-		
+		TileCache tileCache = AndroidUtil.createTileCache(context, "111", 256, 1.0f, 1d);
+//		TileCache tileCache = null;
+
 		databaseRenderer = new DatabaseRenderer(mapDataStore, androidGraphicFactory, tileCache);
 		context = _context;
 		

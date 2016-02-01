@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    >
+
+    <Button
+        android:id="@+id/btn_add_intermediate_point"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:text="Add intermediate point"
+        android:layout_marginBottom="10dp"
+        android:drawableRight="@drawable/ic_marker_2_20px"
+        />
+
+    <Button
+        android:id="@+id/btn_set_start"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:text="Directions from here"
+        android:layout_marginBottom="10dp"
+        android:drawableRight="@drawable/ic_directions_20px"
+        android:layout_below="@+id/btn_add_intermediate_point"
+        />
+    <Button
+        android:id="@+id/btn_set_end"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:text="Directions to here"
+        android:layout_marginBottom="10dp"
+        android:drawableRight="@drawable/ic_directions_20px_2"
+        android:layout_below="@+id/btn_set_start"
+        />
+
+    <Button
+        android:id="@+id/btn_add_poi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:text="Add a POI"
+        android:layout_marginBottom="10dp"
+        android:drawableRight="@drawable/ic_marker_20px"
+        android:layout_below="@+id/btn_set_end"
+
+        />
+</RelativeLayout>

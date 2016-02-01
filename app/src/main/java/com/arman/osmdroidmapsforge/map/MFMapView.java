@@ -1,24 +1,48 @@
 package com.arman.osmdroidmapsforge.map;
 
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.res.TypedArray;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
+import com.arman.osmdroidmapsforge.Helper;
+import com.arman.osmdroidmapsforge.R;
 import com.arman.osmdroidmapsforge.map.overlays.MyLocationNewOverlay;
 import com.arman.osmdroidmapsforge.map.overlays.RotationGestureOverlay;
+import com.arman.osmdroidmapsforge.routing.RouteCalculator;
+import com.arman.osmdroidmapsforge.routing.RoutingSession;
+import com.arman.osmdroidmapsforge.map.overlays.MyMarker;
 
 import org.osmdroid.ResourceProxy;
-import org.osmdroid.bonuspack.overlays.Marker;
+import org.osmdroid.bonuspack.overlays.FolderOverlay;
+import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
+import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
+import org.osmdroid.bonuspack.overlays.MarkerInfoWindow;
+import org.osmdroid.bonuspack.overlays.Polyline;
+import org.osmdroid.bonuspack.routing.Road;
+import org.osmdroid.bonuspack.routing.RoadNode;
 import org.osmdroid.tileprovider.MapTileProviderBase;
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,10 +54,28 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
     static GpsMyLocationProvider gpsLocationProvider;
     static MyLocationNewOverlay myLocationNewOverlay;
     private static boolean isCurrentPosLayerAdded = false;
-    Marker longPressMarker;
+    MyMarker longPressMarker;
     protected int rotationMode = 1; // 0 : Up to North, 1: equal to movement bearing
     boolean followMyLocation = true;
+    boolean isRoutingStuffAdded = false;
+    public static MFMapView mInstance;
+    private static Context mContext;
 
+
+    protected Polyline mRoadOverlay;
+    Polyline mTrackingLineOverlay;
+
+    protected FolderOverlay mRoadNodeMarkers;
+    static final int OSRM=0, GRAPHHOPPER_FASTEST=1, GRAPHHOPPER_BICYCLE=2, GRAPHHOPPER_PEDESTRIAN=3, GOOGLE_FASTEST=4;
+    RouteCalculator mRouteCalculator;
+    int mWhichRouteProvider;
+    public static Road mRoad; //made static to pass between activities
+    boolean routingZoomToBoundingBox = true;
+
+    Dialog longPressDlg;
+    MyMarker startRouteMarker;
+    ArrayList<MyMarker> intermediateMarkers;
+    MyMarker endRouteMarker;
 
     public MFMapView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -73,6 +115,8 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
     {
 
         this.setMultiTouchControls(true);
+        mInstance = this;
+        mContext = getContext();
 
 //        UnComment these lines to add a scale bar to your map:
 
@@ -88,18 +132,396 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
 
         this.getOverlays().add(this.mRotationGestureOverlay);
 
+        mRoadNodeMarkers = new FolderOverlay(mContext);
+        mRoadNodeMarkers.setName("Route Steps");
 
 
+        mWhichRouteProvider = GRAPHHOPPER_FASTEST;
+        mRouteCalculator = new RouteCalculator(mContext);
+        mRouteCalculator.loadGraphStorage();
+
+
+
+        MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(this.getContext(), new MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint arg0) {
+                if (longPressMarker != null)
+                    longPressMarker.closeInfoWindow();
+
+
+
+                return false;
+            }
+
+            @Override
+            public boolean longPressHelper(final GeoPoint position) {
+                if (isRoutingStuffAdded) {
+                    if (longPressDlg == null) {
+                        longPressDlg = new Dialog(getContext());
+                        longPressDlg.setTitle("Choose one");
+                        longPressDlg.setContentView(R.layout.dlg_lng_press_choice);
+                    }
+                    if (intermediateMarkers == null) {
+                        intermediateMarkers = new ArrayList<MyMarker>();
+                    }
+
+                    Button btn_set_start = (Button) longPressDlg.findViewById(R.id.btn_set_start);
+                    Button btn_set_end = (Button) longPressDlg.findViewById(R.id.btn_set_end);
+                    Button btn_add_poi = (Button) longPressDlg.findViewById(R.id.btn_add_poi);
+                    Button btn_add_intermediate_point = (Button) longPressDlg.findViewById(R.id.btn_add_intermediate_point);
+
+                    if (endRouteMarker != null)
+                        btn_add_intermediate_point.setVisibility(View.VISIBLE);
+                    else
+                        btn_add_intermediate_point.setVisibility(View.GONE);
+
+                    btn_add_intermediate_point.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            longPressDlg.dismiss();
+
+                            final MyMarker myMarker = new MyMarker(mInstance);
+                            myMarker.setPosition(position);
+                            myMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+                            myMarker.setIcon(getResources().getDrawable(R.drawable.marker_green));
+                            myMarker.setInfoWindow(null);
+
+
+                            myMarker.setOnMarkerClickListener(new MyMarker.OnMarkerClickListener() {
+                                @Override
+                                public boolean onMarkerClick(MyMarker var1, MapView var2) {
+                                    AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
+                                    alertDialog.setTitle("Delete marker");
+                                    alertDialog.setMessage("Are you sure?");
+                                    alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
+                                            new DialogInterface.OnClickListener() {
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    mInstance.getOverlays().remove(myMarker);
+                                                    intermediateMarkers.remove(myMarker);
+                                                    mInstance.invalidate();
+                                                    dialog.dismiss();
+
+                                                    checkForRouteDrawRequest();
+                                                }
+                                            });
+                                    alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
+                                            new DialogInterface.OnClickListener() {
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    dialog.dismiss();
+                                                }
+                                            });
+                                    alertDialog.show();
+                                    return false;
+                                }
+                            });
+
+                            intermediateMarkers.add(myMarker);
+                            mInstance.getOverlays().add(myMarker);
+                            mInstance.invalidate();
+
+                            checkForRouteDrawRequest();
+                        }
+                    });
+
+                    btn_set_start.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (startRouteMarker != null)
+                                mInstance.getOverlays().remove(startRouteMarker);
+
+                            startRouteMarker = new MyMarker(mInstance);
+                            startRouteMarker.setPosition(position);
+                            startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+                            startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
+                            startRouteMarker.setInfoWindow(null);
+
+
+                            mInstance.getOverlays().add(startRouteMarker);
+                            mInstance.invalidate();
+
+                            checkForRouteDrawRequest();
+
+                            longPressDlg.dismiss();
+                        }
+                    });
+
+                    btn_set_end.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (endRouteMarker != null)
+                                mInstance.getOverlays().remove(endRouteMarker);
+
+                            endRouteMarker = new MyMarker(mInstance);
+                            endRouteMarker.setPosition(position);
+                            endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+                            endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
+                            endRouteMarker.setInfoWindow(null);
+
+                            mInstance.getOverlays().add(endRouteMarker);
+                            mInstance.invalidate();
+
+                            checkForRouteDrawRequest();
+
+                            longPressDlg.dismiss();
+
+                        }
+                    });
+
+                    btn_add_poi.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Toast.makeText(mContext, "Add a POI to map", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    longPressDlg.show();
+                }
+
+                else {
+                    if (startRouteMarker == null)
+                    {
+                        startRouteMarker = new MyMarker(mInstance);
+                        startRouteMarker.setPosition(new GeoPoint(position));
+                        startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+
+                        startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
+
+                        mInstance.getOverlays().add(startRouteMarker);
+                        getController().animateTo(position);
+                        mInstance.invalidate();
+
+
+                    }
+                    else {
+
+
+                        if (endRouteMarker != null) {
+                            endRouteMarker.closeInfoWindow();
+                            mInstance.getOverlays().remove(endRouteMarker);
+                        }
+
+
+                        endRouteMarker = new MyMarker(mInstance);
+                        endRouteMarker.setPosition(position);
+                        endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+
+                        endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
+
+                        mInstance.getOverlays().add(endRouteMarker);
+
+                        getController().animateTo(position);
+
+                        mInstance.invalidate();
+
+                        checkForRouteDrawRequest();
+                    }
+                }
+
+                return false;
+            }
+        });
+
+        this.getOverlays().add(0, mapEventsOverlay);
 
         setLocationListener();
 
         this.invalidate();
     }
 
+    private void checkForRouteDrawRequest()
+    {
+        ArrayList<GeoPoint> geoPoints = new ArrayList<GeoPoint>();
+
+        if (startRouteMarker != null)
+        {
+            geoPoints.add(startRouteMarker.getPosition());
+        }
+
+        if (startRouteMarker != null && endRouteMarker != null) {
+            if (intermediateMarkers != null)
+                for (MyMarker myMarker : intermediateMarkers) {
+                    geoPoints.add(myMarker.getPosition());
+                }
+            geoPoints.add(endRouteMarker.getPosition());
+
+            if (isRoutingStuffAdded)
+                removeRoutingStuffFromUi();
+            calculateAndShowRoute(geoPoints, true);
+        }
+    }
+
+    public void calculateAndShowRoute(ArrayList<GeoPoint> points, boolean showStartEndMarkers)
+    {
+        UpdateRoadTask updateRoadTask = new UpdateRoadTask(showStartEndMarkers);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            updateRoadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, points);
+        else
+            updateRoadTask.execute(points);
+    }
+
+    private UpdateRoadTask updateRoadTask;
+    private class UpdateRoadTask extends AsyncTask<ArrayList<GeoPoint>, Void, Road> {
+        private ArrayList<GeoPoint> mPoints;
+        boolean mShowStartEndMarkers;
+        public UpdateRoadTask(boolean showStartEndMarkers)
+        {
+            mShowStartEndMarkers = showStartEndMarkers;
+        }
+
+        protected void onPreExecute() {
+            Toast.makeText(mContext, "Calculating best route...", Toast.LENGTH_LONG).show();
+        }
+
+        protected Road doInBackground(ArrayList<GeoPoint>... points) {
+            mPoints = points[0];
+            return Helper.getRoutingRoad(mContext, RoutingSession.getRouteCalculator(mContext),
+                    mWhichRouteProvider, points[0]);
+        }
+
+        protected void onPostExecute(Road result) {
+            if (mShowStartEndMarkers)
+                setRoutingStart_EndMarkers(mPoints.get(0), mPoints.get(mPoints.size() - 1));
+           updateUIWithRoad(result);
+
+            updateRoadTask = null;
+//            getPOIAsync(poiTagText.getText().toString());
+        }
+    }
+
+    public void updateUIWithRoad(Road road){
+        isRoutingStuffAdded = true;
+        mRoad = road;
+
+        mRoadNodeMarkers.getItems().clear();
+
+        List<Overlay> mapOverlays = this.getOverlays();
+        if (mRoadOverlay != null){
+            mapOverlays.remove(mRoadOverlay);
+            mRoadOverlay = null;
+        }
+        if (road == null)
+            return;
+        if (road.mStatus == Road.STATUS_TECHNICAL_ISSUE) {
+            Toast.makeText(this.getContext(), "Technical error in calculating route", Toast.LENGTH_SHORT).show();
+        }
+        else if (road.mStatus > Road.STATUS_TECHNICAL_ISSUE) //functional issues
+            Toast.makeText(this.getContext(), "No routes found", Toast.LENGTH_SHORT).show();
+        mRoadOverlay = buildRoadOverlay(road, Color.parseColor("#004eff"), 7.0f, this.getContext());
+        String routeDesc = road.getLengthDurationText(-1);
+        mRoadOverlay.setTitle("path" + " - " + routeDesc);
+        mapOverlays.add(0, mRoadOverlay);
+        //we dinsert the road overlay at the "bottom", just above the MapEventsOverlay,
+        //to avoid covering the other overlays.
+
+        if (routingZoomToBoundingBox)
+            this.zoomToBoundingBox(road.mBoundingBox);
+        putRoadNodes(road);
+        this.invalidate();
+
+    }
+
+    private void putRoadNodes(Road road){
+        mInstance.getOverlays().remove(mRoadNodeMarkers);
+        mRoadNodeMarkers.getItems().clear();
+        Drawable icon = getResources().getDrawable(R.drawable.marker_node);
+        int n = road.mNodes.size();
+        MarkerInfoWindow infoWindow = new MarkerInfoWindow(R.layout.bonuspack_bubble, this);
+        TypedArray iconIds = getResources().obtainTypedArray(R.array.direction_icons);
+        for (int i=0; i<n; i++){
+            RoadNode node = road.mNodes.get(i);
+            String instructions = (node.mInstructions==null ? "" : node.mInstructions);
+            MyMarker nodeMarker = new MyMarker(this);
+            nodeMarker.setTitle("Step"+ " " + (i+1));
+            nodeMarker.setSnippet(instructions);
+            nodeMarker.setSubDescription(Road.getLengthDurationText(node.mLength, node.mDuration));
+            nodeMarker.setPosition(node.mLocation);
+            nodeMarker.setIcon(icon);
+            nodeMarker.setInfoWindow(infoWindow); //use a shared infowindow.
+            int iconId = iconIds.getResourceId(node.mManeuverType, R.drawable.ic_empty);
+            if (iconId != R.drawable.ic_empty){
+                Drawable image = getResources().getDrawable(iconId);
+                nodeMarker.setImage(image);
+            }
+            mRoadNodeMarkers.add(nodeMarker);
+
+        }
+        mInstance.getOverlays().add(1, mRoadNodeMarkers);
+        iconIds.recycle();
+
+
+        if (mRoadNodeMarkers != null && mRoadOverlay != null)
+        {
+            if (mRoad.mNodes.size() > 0) {
+                RoadNode node = mRoad.mNodes.get(0);
+
+
+                String distance;
+                if (node.mLength < 1)
+                    distance = String.format("%dm", (int) (node.mLength * 1000));
+                else
+                    distance = String.format("%.1fkm", node.mLength);
+
+
+            }
+        }
+    }
+
+    public static Polyline buildRoadOverlay(Road road, int color, float width, Context context){
+        Polyline roadOverlay = new Polyline(context);
+        roadOverlay.setColor(color);
+        roadOverlay.setWidth(width);
+
+        if (road != null) {
+            ArrayList<GeoPoint> polyline = road.mRouteHigh;
+            roadOverlay.setPoints(polyline);
+        }
+        return roadOverlay;
+    }
+
+    public void setRoutingStart_EndMarkers(GeoPoint startPoint, GeoPoint endPoint)
+    {
+        if (endRouteMarker != null) {
+            endRouteMarker.closeInfoWindow();
+            mInstance.getOverlays().remove(endRouteMarker);
+        }
+        endRouteMarker = new MyMarker(mInstance);
+        endRouteMarker.setPosition(endPoint);
+        endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+        endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
+
+        if (startRouteMarker != null) {
+            startRouteMarker.closeInfoWindow();
+            mInstance.getOverlays().remove(startRouteMarker);
+        }
+        startRouteMarker = new MyMarker(mInstance);
+        startRouteMarker.setPosition(startPoint);
+        startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+        startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
+
+        mInstance.getOverlays().add(startRouteMarker);
+        mInstance.getOverlays().add(endRouteMarker);
+    }
+
+    public void removeRoutingStuffFromUi()
+    {
+        isRoutingStuffAdded = false;
+        mInstance.getOverlays().remove(mRoadOverlay);
+        mInstance.getOverlays().remove(mRoadNodeMarkers);
+        mInstance.getOverlays().remove(endRouteMarker);
+        mInstance.getOverlays().remove(startRouteMarker);
+        if (intermediateMarkers != null)
+            mInstance.getOverlays().removeAll(intermediateMarkers);
+        startRouteMarker = null;
+        endRouteMarker = null;
+
+        mInstance.invalidate();
+    }
+
     public void setLocationListener()
     {
         locManager = (LocationManager)this.getContext().getSystemService(Context.LOCATION_SERVICE);
-        locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5, 1f, this);
+            locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5, 1f, this);
     }
 
     public void addMyLocationOverlay()
@@ -212,6 +634,22 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
         this.invalidate();
     }
 
+
+    public Location getCurrentLocation() {
+        return getCurrentLocation(true);
+    }
+    public Location getCurrentLocation(boolean isFirstAttempt)
+    {
+        Location loc = Helper.getLastBestLocation(this.getContext());
+        if (loc == null)
+        {
+//            locManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+            locManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
+            if (isFirstAttempt)
+                return getCurrentLocation(false);
+        }
+        return  loc;
+    }
 
     @Override
     public void onLocationChanged(Location location) {
