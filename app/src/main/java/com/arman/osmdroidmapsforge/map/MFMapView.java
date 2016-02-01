@@ -26,12 +26,12 @@ import com.arman.osmdroidmapsforge.map.overlays.MyLocationNewOverlay;
 import com.arman.osmdroidmapsforge.map.overlays.RotationGestureOverlay;
 import com.arman.osmdroidmapsforge.routing.RouteCalculator;
 import com.arman.osmdroidmapsforge.routing.RoutingSession;
+import com.arman.osmdroidmapsforge.map.overlays.MyMarker;
 
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.bonuspack.overlays.FolderOverlay;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
 import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
-import org.osmdroid.bonuspack.overlays.Marker;
 import org.osmdroid.bonuspack.overlays.MarkerInfoWindow;
 import org.osmdroid.bonuspack.overlays.Polyline;
 import org.osmdroid.bonuspack.routing.Road;
@@ -54,7 +54,7 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
     static GpsMyLocationProvider gpsLocationProvider;
     static MyLocationNewOverlay myLocationNewOverlay;
     private static boolean isCurrentPosLayerAdded = false;
-    Marker longPressMarker;
+    MyMarker longPressMarker;
     protected int rotationMode = 1; // 0 : Up to North, 1: equal to movement bearing
     boolean followMyLocation = true;
     boolean isRoutingStuffAdded = false;
@@ -73,9 +73,9 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
     boolean routingZoomToBoundingBox = true;
 
     Dialog longPressDlg;
-    Marker startRouteMarker;
-    ArrayList<Marker> intermediateMarkers;
-    Marker endRouteMarker;
+    MyMarker startRouteMarker;
+    ArrayList<MyMarker> intermediateMarkers;
+    MyMarker endRouteMarker;
 
     public MFMapView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -162,7 +162,7 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                         longPressDlg.setContentView(R.layout.dlg_lng_press_choice);
                     }
                     if (intermediateMarkers == null) {
-                        intermediateMarkers = new ArrayList<Marker>();
+                        intermediateMarkers = new ArrayList<MyMarker>();
                     }
 
                     Button btn_set_start = (Button) longPressDlg.findViewById(R.id.btn_set_start);
@@ -180,28 +180,16 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                         public void onClick(View v) {
                             longPressDlg.dismiss();
 
-                            final Marker myMarker = new Marker(mInstance);
+                            final MyMarker myMarker = new MyMarker(mInstance);
                             myMarker.setPosition(position);
-                            myMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                            myMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
                             myMarker.setIcon(getResources().getDrawable(R.drawable.marker_green));
-//                            myMarker.setDraggable(true);
                             myMarker.setInfoWindow(null);
-//                            myMarker.setOnMarkerDragListener(new MyMarker.OnMarkerDragListener() {
-//                                @Override
-//                                public void onMarkerDrag(MyMarker marker) {
-//                                }
-//                                @Override
-//                                public void onMarkerDragEnd(MyMarker marker) {
-//                                    checkForRouteDrawRequest();
-//                                }
-//                                @Override
-//                                public void onMarkerDragStart(MyMarker marker) {
-//                                }
-//                            });
 
-                            myMarker.setOnMarkerClickListener(new Marker.OnMarkerClickListener() {
+
+                            myMarker.setOnMarkerClickListener(new MyMarker.OnMarkerClickListener() {
                                 @Override
-                                public boolean onMarkerClick(Marker var1, MapView var2) {
+                                public boolean onMarkerClick(MyMarker var1, MapView var2) {
                                     AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
                                     alertDialog.setTitle("Delete marker");
                                     alertDialog.setMessage("Are you sure?");
@@ -241,26 +229,12 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                             if (startRouteMarker != null)
                                 mInstance.getOverlays().remove(startRouteMarker);
 
-                            startRouteMarker = new Marker(mInstance);
+                            startRouteMarker = new MyMarker(mInstance);
                             startRouteMarker.setPosition(position);
-                            startRouteMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                            startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
                             startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
-//                            startRouteMarker.setDraggable(true);
                             startRouteMarker.setInfoWindow(null);
-//                            startRouteMarker.setOnMarkerDragListener(new MyMarker.OnMarkerDragListener() {
-//                                @Override
-//                                public void onMarkerDrag(MyMarker marker) {
-//                                }
-//
-//                                @Override
-//                                public void onMarkerDragEnd(MyMarker marker) {
-//                                    checkForRouteDrawRequest();
-//                                }
-//
-//                                @Override
-//                                public void onMarkerDragStart(MyMarker marker) {
-//                                }
-//                            });
+
 
                             mInstance.getOverlays().add(startRouteMarker);
                             mInstance.invalidate();
@@ -277,28 +251,11 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                             if (endRouteMarker != null)
                                 mInstance.getOverlays().remove(endRouteMarker);
 
-                            endRouteMarker = new Marker(mInstance);
+                            endRouteMarker = new MyMarker(mInstance);
                             endRouteMarker.setPosition(position);
-                            endRouteMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                            endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
                             endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
-//                            endRouteMarker.setDraggable(true);
                             endRouteMarker.setInfoWindow(null);
-//                            endRouteMarker.setOnMarkerDragListener(new MyMarker.OnMarkerDragListener() {
-//                                @Override
-//                                public void onMarkerDrag(MyMarker marker) {
-//
-//                                }
-//
-//                                @Override
-//                                public void onMarkerDragEnd(MyMarker marker) {
-//                                    checkForRouteDrawRequest();
-//                                }
-//
-//                                @Override
-//                                public void onMarkerDragStart(MyMarker marker) {
-//
-//                                }
-//                            });
 
                             mInstance.getOverlays().add(endRouteMarker);
                             mInstance.invalidate();
@@ -313,7 +270,7 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                     btn_add_poi.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
-
+                            Toast.makeText(mContext, "Add a POI to map", Toast.LENGTH_SHORT).show();
                         }
                     });
 
@@ -321,26 +278,43 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
                 }
 
                 else {
-                    if (endRouteMarker != null) {
-                        endRouteMarker.closeInfoWindow();
-                        mInstance.getOverlays().remove(endRouteMarker);
+                    if (startRouteMarker == null)
+                    {
+                        startRouteMarker = new MyMarker(mInstance);
+                        startRouteMarker.setPosition(new GeoPoint(position));
+                        startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+
+                        startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
+
+                        mInstance.getOverlays().add(startRouteMarker);
+                        getController().animateTo(position);
+                        mInstance.invalidate();
+
+
                     }
+                    else {
 
 
-                    endRouteMarker = new Marker(mInstance);
-                    endRouteMarker.setPosition(position);
-                    endRouteMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-
-                    endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
-
-                    mInstance.getOverlays().add(endRouteMarker);
-
-                    getController().animateTo(position);
-
-                    mInstance.invalidate();
+                        if (endRouteMarker != null) {
+                            endRouteMarker.closeInfoWindow();
+                            mInstance.getOverlays().remove(endRouteMarker);
+                        }
 
 
-                    checkForRouteDrawRequest();
+                        endRouteMarker = new MyMarker(mInstance);
+                        endRouteMarker.setPosition(position);
+                        endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
+
+                        endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
+
+                        mInstance.getOverlays().add(endRouteMarker);
+
+                        getController().animateTo(position);
+
+                        mInstance.invalidate();
+
+                        checkForRouteDrawRequest();
+                    }
                 }
 
                 return false;
@@ -365,7 +339,7 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
 
         if (startRouteMarker != null && endRouteMarker != null) {
             if (intermediateMarkers != null)
-                for (Marker myMarker : intermediateMarkers) {
+                for (MyMarker myMarker : intermediateMarkers) {
                     geoPoints.add(myMarker.getPosition());
                 }
             geoPoints.add(endRouteMarker.getPosition());
@@ -452,12 +426,12 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
         mRoadNodeMarkers.getItems().clear();
         Drawable icon = getResources().getDrawable(R.drawable.marker_node);
         int n = road.mNodes.size();
-        MarkerInfoWindow infoWindow = new MarkerInfoWindow(R.layout.bouspack_bubble, this);
+        MarkerInfoWindow infoWindow = new MarkerInfoWindow(R.layout.bonuspack_bubble, this);
         TypedArray iconIds = getResources().obtainTypedArray(R.array.direction_icons);
         for (int i=0; i<n; i++){
             RoadNode node = road.mNodes.get(i);
             String instructions = (node.mInstructions==null ? "" : node.mInstructions);
-            Marker nodeMarker = new Marker(this);
+            MyMarker nodeMarker = new MyMarker(this);
             nodeMarker.setTitle("Step"+ " " + (i+1));
             nodeMarker.setSnippet(instructions);
             nodeMarker.setSubDescription(Road.getLengthDurationText(node.mLength, node.mDuration));
@@ -511,18 +485,18 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
             endRouteMarker.closeInfoWindow();
             mInstance.getOverlays().remove(endRouteMarker);
         }
-        endRouteMarker = new Marker(mInstance);
+        endRouteMarker = new MyMarker(mInstance);
         endRouteMarker.setPosition(endPoint);
-        endRouteMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        endRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
         endRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_red));
 
         if (startRouteMarker != null) {
             startRouteMarker.closeInfoWindow();
             mInstance.getOverlays().remove(startRouteMarker);
         }
-        startRouteMarker = new Marker(mInstance);
+        startRouteMarker = new MyMarker(mInstance);
         startRouteMarker.setPosition(startPoint);
-        startRouteMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        startRouteMarker.setAnchor(MyMarker.ANCHOR_CENTER, MyMarker.ANCHOR_BOTTOM);
         startRouteMarker.setIcon(getResources().getDrawable(R.drawable.marker_blue));
 
         mInstance.getOverlays().add(startRouteMarker);
@@ -547,7 +521,7 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
     public void setLocationListener()
     {
         locManager = (LocationManager)this.getContext().getSystemService(Context.LOCATION_SERVICE);
-        locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5, 1f, this);
+            locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5, 1f, this);
     }
 
     public void addMyLocationOverlay()
@@ -660,6 +634,22 @@ public class MFMapView extends org.osmdroid.views.MapView implements LocationLis
         this.invalidate();
     }
 
+
+    public Location getCurrentLocation() {
+        return getCurrentLocation(true);
+    }
+    public Location getCurrentLocation(boolean isFirstAttempt)
+    {
+        Location loc = Helper.getLastBestLocation(this.getContext());
+        if (loc == null)
+        {
+//            locManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+            locManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0, 0, this);
+            if (isFirstAttempt)
+                return getCurrentLocation(false);
+        }
+        return  loc;
+    }
 
     @Override
     public void onLocationChanged(Location location) {

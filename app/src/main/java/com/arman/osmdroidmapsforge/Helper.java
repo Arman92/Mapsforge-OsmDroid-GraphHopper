@@ -1,6 +1,7 @@
 package com.arman.osmdroidmapsforge;
 
 import android.content.Context;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import com.arman.osmdroidmapsforge.routing.GraphHopperRoadManager;
@@ -114,6 +115,46 @@ public class Helper {
             if (mAsyncTaskEventListener != null)
                 mAsyncTaskEventListener.onPreExecute();
         }
+    }
+
+
+    public static LocationManager locManager;
+    public static android.location.Location getLastBestLocation(Context _context)
+    {
+        if (locManager == null)
+            locManager = (LocationManager)_context.getSystemService(Context.LOCATION_SERVICE);
+
+
+        int minDistance = (int) 500;
+        long minTime    = System.currentTimeMillis() - (900 * 1000);
+
+
+        android.location.Location bestResult = null;
+
+        float bestAccuracy = Float.MAX_VALUE;
+        long bestTime = Long.MIN_VALUE;
+
+        // Iterate through all the providers on the system, keeping
+        // note of the most accurate result within the acceptable time limit.
+        // If no result is found within maxTime, return the newest Location.
+        List<String> matchingProviders = locManager.getAllProviders();
+        for (String provider: matchingProviders) {
+            android.location.Location location = locManager.getLastKnownLocation(provider);
+            if (location != null) {
+//                log(TAG, " location: " + location.getLatitude() + "," + location.getLongitude() + "," + location.getAccuracy() + "," + location.getSpeed() + "m/s");
+                float accuracy = location.getAccuracy();
+                long time = location.getTime();
+//                log(TAG, "time>minTime: " + (time > minTime) + ", accuracy<bestAccuracy: " + (accuracy < bestAccuracy));
+//                if ((time > minTime && accuracy < bestAccuracy)) {
+                if ( accuracy < bestAccuracy) {
+                    bestResult = location;
+                    bestAccuracy = accuracy;
+                    bestTime = time;
+                }
+            }
+        }
+
+        return bestResult;
     }
 
 }

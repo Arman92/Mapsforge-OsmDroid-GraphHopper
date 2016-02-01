@@ -523,11 +523,11 @@ public class MyLocationNewOverlay extends Marker implements IMyLocationConsumer,
 
         // Add in the accuracy circle if enabled
         if (mDrawAccuracyEnabled) {
-            final int radius = (int) FloatMath.ceil(lastFix.getAccuracy()
+            final int radius = (int) java.lang.Math.ceil(lastFix.getAccuracy()
                     / (float) TileSystem.GroundResolution(lastFix.getLatitude(), zoomLevel));
             reuse.union(mMapCoordsTranslated.x - radius, mMapCoordsTranslated.y - radius,
                     mMapCoordsTranslated.x + radius, mMapCoordsTranslated.y + radius);
-            final int strokeWidth = (int) FloatMath.ceil(mCirclePaint.getStrokeWidth() == 0 ? 1
+            final int strokeWidth = (int) java.lang.Math.ceil(mCirclePaint.getStrokeWidth() == 0 ? 1
                     : mCirclePaint.getStrokeWidth());
             reuse.inset(-strokeWidth, -strokeWidth);
         }
@@ -782,7 +782,7 @@ public class MyLocationNewOverlay extends Marker implements IMyLocationConsumer,
             setLocation(location);
         }
         else
-            Toast.makeText(mMapView.getContext(), "در حال دریافت مکان شما", Toast.LENGTH_LONG).show();
+            Toast.makeText(mMapView.getContext(), "Searching for your location", Toast.LENGTH_LONG).show();
 
     }
 
